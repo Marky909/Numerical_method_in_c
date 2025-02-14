@@ -1,0 +1,3 @@
+/.tmp.driveupload
+/lab3.pptx
+/output of lab assingnment 2 with synthetic divioson output.pptx

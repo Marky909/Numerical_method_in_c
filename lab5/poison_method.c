@@ -1,86 +1,50 @@
-#include <stdio.h>
-#include <math.h>
-
-// Define the source function
-#define g(x, y) (2 * (x) * (x) * (y) * (y))
+#include<stdio.h>
+#include<math.h>
+#define EQUATION(x, y) (2 * (x) * (x) * (y) * (y))  // Poisson equation RHS function
 
 int main() {
-    int n, i, j, k;
-    float sum, error, E[10], a[10][10], b[10], new_x[10], old_x[10], tl, tr, tu, tb, h;
+    int N;
+    double h, tol;
 
-    // Input grid dimension and boundary temperatures
-    printf("Enter dimension of the plate: \n");
-    scanf("%d", &n);
-    printf("Enter grid spacing (h): \n");
-    scanf("%f", &h);
-    printf("Enter temperatures at left, right, bottom, and upper part of the plate: \n");
-    scanf("%f%f%f%f", &tl, &tr, &tb, &tu);
+    printf("Enter grid size (N): ");
+    scanf("%d", &N);
 
-    // Initialize coefficient matrix and RHS vector
-    for (i = 0; i <= n; i++) {
-        for (j = 0; j <= n; j++) {
-            if (i == j)
-                a[i][j] = -4; // Diagonal elements
-            else if (j == n - i)
-                a[i][j] = 0; // Off-diagonal elements
-            else
-                a[i][j] = 1; // Other elements
+    printf("Enter grid spacing (h): ");
+    scanf("%lf", &h);
+
+    printf("Enter tolerance value: ");
+    scanf("%lf", &tol);
+
+    double F[N][N];
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            F[i][j] = 0.0;  // Initialize with boundary conditions
         }
     }
 
-    // Construct RHS vector
-    k = 0;
-    for (i = 1; i < n; i++) {
-        for (j = 1; j < n; j++) {
-            b[k] = h * h * g(i, j); // Source term
-            if ((i - 1) == 0)
-                b[k] -= tl;
-            if ((i + 1) == n)
-                b[k] -= tr;
-            if ((j - 1) == 0)
-                b[k] -= tb;
-            if ((j + 1) == n)
-                b[k] -= tu;
-            k++;
-        }
-    }
+    double error;
+    int iter = 0;
 
-    // Input accuracy limit
-    printf("Enter accuracy limit: \n");
-    scanf("%f", &error);
-
-    // Solve the system using Gauss-Seidel method
-    for (i = 0; i <= n; i++)
-        new_x[i] = 0; // Initial guess
-
-    while (1) {
-        for (i = 0; i <= n; i++) {
-            sum = b[i];
-            for (j = 0; j <= n; j++) {
-                if (i != j)
-                    sum -= a[i][j] * new_x[j];
-            }
-            old_x[i] = new_x[i];
-            new_x[i] = sum / a[i][i];
-            E[i] = fabs((new_x[i] - old_x[i]) / new_x[i]);
-        }
-
-        // Check for convergence
-        int flag = 1;
-        for (i = 0; i <= n; i++) {
-            if (E[i] > error) {
-                flag = 0;
-                break;
+    // Iterative method (Gauss-Seidel) to solve the equation
+    do {
+        error = 0.0;
+        for (int i = 1; i < N - 1; i++) {
+            for (int j = 1; j < N - 1; j++) {
+                double old = F[i][j];
+                F[i][j] = (F[i+1][j] + F[i-1][j] + F[i][j+1] + F[i][j-1] - h*h * EQUATION(i*h, j*h)) / 4.0;
+                error = fmax(error, fabs(F[i][j] - old));
             }
         }
-        if (flag)
-            break;
-    }
+        iter++;
+    } while (error > tol);
 
-    // Output the solution
-    printf("Solution:\n");
-    for (i = 0; i <= n; i++)
-        printf("x%d = %6.2f\n", i + 1, new_x[i]);
+    printf("Solution after %d iterations:\n", iter);
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%0.6lf\t", F[i][j]);
+        }
+        printf("\n");
+    }
 
     return 0;
 }
